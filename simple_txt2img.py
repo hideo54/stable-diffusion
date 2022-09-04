@@ -12,6 +12,8 @@ from pytorch_lightning import seed_everything
 from contextlib import nullcontext
 from ldm.util import instantiate_from_config
 from optimizedSD.optimUtils import split_weighted_subprompts
+from transformers import logging
+logging.set_verbosity_error()
 
 def chunk(it, size):
     it = iter(it)
