@@ -1,0 +1,103 @@
+import io, os, time
+import cv2
+from slack_bolt import App
+from PIL import Image
+from google.cloud import storage
+
+import simple_txt2img
+
+app = App(
+    token=os.environ.get('SLACK_BOT_TOKEN'),
+    signing_secret=os.environ.get('SLACK_SIGNING_SECRET')
+)
+client = storage.Client()
+bucket = client.get_bucket('img.hideo54.com')
+
+generation_in_progress = False
+
+@app.command('/hideo')
+def response_to_command(ack, respond, command):
+    ack(response_type='in_channel')
+    global generation_in_progress
+    global bucket
+
+    channel_sandbox = os.environ.get('CHANNEL_SANDBOX')
+    user_hideo54 = os.environ.get('USER_HIDEO54')
+    username = 'Kaguya in hideout'
+
+    channel = command['user_id'] if command['channel_name'] == 'directmessage' else command['channel_id']
+    if 'text' in command and command['text'].startswith('sd '):
+        if generation_in_progress:
+            app.client.chat_postMessage(
+                channel=channel,
+                icon_emoji=':hideo54:',
+                text=':fox_face: 同時に相手にできるのは1人だけだこん :pensive: 2分ほど待つこん :tea:',
+                username=username,
+            )
+            return
+        else:
+            app.client.chat_postMessage(
+                channel=channel,
+                icon_emoji=':hideo54:',
+                text=':fox_face: 承ったこん! 生成がんばるこん :muscle: 2分ほどかかるこん… :tea:',
+                username=username,
+            )
+            try:
+                prompt = ' '.join(command['text'].split(' ')[1:])
+                generation_in_progress = True
+                result = simple_txt2img.generate_image(prompt) # takes a long time
+                if result is not None:
+                    images, seed = result
+                    image_urls = []
+                    for image in images:
+                        bio = io.BytesIO()
+                        image.save(bio, format='png')
+                        unix_time = str(int(time.time()))
+                        filename = f'stable-diffusion/{unix_time}.png'
+                        bucket.blob(filename).upload_from_string(data=bio.getvalue(), content_type='image/png')
+                        image_urls.append(f'https://img.hideo54.com/stable-diffusion/{unix_time}.png')
+                    print(prompt, image_urls)
+                    description_text = f':fox_face: 「{prompt}」の画像ができあがったこん :muscle: (seed: {seed})'
+                    result_text = description_text + '\n' + '\n'.join(image_urls)
+                    first_post_result = app.client.chat_postMessage(
+                        channel=channel,
+                        icon_emoji=':hideo54:',
+                        text=description_text,
+                        username=username,
+                    )
+                    app.client.chat_postMessage(
+                        channel=channel,
+                        icon_emoji=':hideo54:',
+                        text=result_text,
+                        thread_ts=first_post_result['ts'],
+                        username=username,
+                    )
+                    if command['channel_id'] != channel_sandbox:
+                        app.client.chat_postMessage(
+                            channel=user_hideo54, # type: ignore
+                            icon_emoji=':hideo54:',
+                            text=result_text,
+                            username=username,
+                        )
+            except:
+                app.client.chat_postMessage(
+                    channel=channel,
+                    icon_emoji=':hideo54:',
+                    text=':fox_face: なんか失敗したこん… :pensive:',
+                    username=username,
+                )
+
+            generation_in_progress = False
+            return
+
+    app.client.chat_postMessage(
+        channel=channel,
+        icon_emoji=':hideo54:',
+        text=':fox_face:',
+        username=username,
+    )
+
+if __name__ == '__main__':
+    app.start(
+        port=int(os.environ.get('PORT', 54011)),
+    )

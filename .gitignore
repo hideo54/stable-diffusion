@@ -4,3 +4,5 @@ __pycache__
 latent_diffusion.egg-info
 dist
 models/ldm/stable-diffusion-v1
+.env
+key.json
