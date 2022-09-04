@@ -23,25 +23,23 @@ def load_model_from_config(ckpt, verbose=False):
     sd = pl_sd["state_dict"]
     return sd
 
-config = "optimizedSD/v1-inference.yaml"
-ckpt = "models/ldm/stable-diffusion-v1/model.ckpt"
-
-outpath = 'outputs/txt2img-samples'
-batch_size = 1
-ddim_steps = 50
-C = 4
-H = 512
-W = 512
-f = 8
-scale = 7.5
-
-sd = load_model_from_config(f"{ckpt}")
-
 def generate_image(prompt):
+    config = "optimizedSD/v1-inference.yaml"
+    ckpt = "models/ldm/stable-diffusion-v1/model.ckpt"
+
+    outpath = 'outputs/txt2img-samples'
+    batch_size = 1
+    ddim_steps = 50
+    C = 4
+    H = 512
+    W = 512
+    f = 8
+    scale = 7.5
 
     seed = randint(0, 1000000)
     seed_everything(seed)
 
+    sd = load_model_from_config(f"{ckpt}")
     li, lo = [], []
     for key, value in sd.items():
         sp = key.split(".")
@@ -140,3 +138,5 @@ def generate_image(prompt):
                 while torch.cuda.memory_allocated() / 1e6 >= mem:
                     time.sleep(1)
                 del samples_ddim
+
+                return images, seed
