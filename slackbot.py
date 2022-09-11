@@ -23,23 +23,48 @@ def response_to_command(ack, respond, command):
 
     channel_sandbox = os.environ.get('CHANNEL_SANDBOX')
     user_hideo54 = os.environ.get('USER_HIDEO54')
-    username = 'Kaguya in hideout'
+
+    def create_blocks_from_text(text: str):
+        return [
+            {
+                'type': 'context',
+                'elements': [
+                    {
+                        'type': 'plain_text',
+                        'text': 'Managed by Kaguya in hideout',
+                        'emoji': True,
+                    },
+                ],
+            },
+            {
+                'type': 'section',
+                'text': {
+                    'type': 'mrkdwn',
+                    'text': text,
+                },
+            },
+        ]
 
     channel = command['user_id'] if command['channel_name'] == 'directmessage' else command['channel_id']
     if 'text' in command and command['text'].startswith('sd '):
+        username = 'Stable Diffusion'
         if generation_in_progress:
+            text = ':fox_face: 同時に相手にできるのは1人だけだこん :pensive: 2分ほど待つこん :tea:'
             app.client.chat_postMessage(
                 channel=channel,
                 icon_emoji=':hideo54:',
-                text=':fox_face: 同時に相手にできるのは1人だけだこん :pensive: 2分ほど待つこん :tea:',
+                text=text,
+                blocks=create_blocks_from_text(text),  # type: ignore
                 username=username,
             )
             return
         else:
+            text = ':fox_face: 承ったこん! 生成がんばるこん :muscle: 2分ほどかかるこん… :tea:'
             app.client.chat_postMessage(
                 channel=channel,
                 icon_emoji=':hideo54:',
-                text=':fox_face: 承ったこん! 生成がんばるこん :muscle: 2分ほどかかるこん… :tea:',
+                text=text,
+                blocks=create_blocks_from_text(text),  # type: ignore
                 username=username,
             )
             try:
@@ -63,12 +88,14 @@ def response_to_command(ack, respond, command):
                         channel=channel,
                         icon_emoji=':hideo54:',
                         text=description_text,
+                        blocks=create_blocks_from_text(description_text),  # type: ignore
                         username=username,
                     )
                     app.client.chat_postMessage(
                         channel=channel,
                         icon_emoji=':hideo54:',
                         text=result_text,
+                        blocks=create_blocks_from_text(result_text),  # type: ignore
                         thread_ts=first_post_result['ts'],
                         username=username,
                     )
@@ -77,13 +104,16 @@ def response_to_command(ack, respond, command):
                             channel=user_hideo54, # type: ignore
                             icon_emoji=':hideo54:',
                             text=result_text,
+                            blocks=create_blocks_from_text(result_text),  # type: ignore
                             username=username,
                         )
             except:
+                failed_text = ':fox_face: なんか失敗したこん… :pensive:'
                 app.client.chat_postMessage(
                     channel=channel,
                     icon_emoji=':hideo54:',
-                    text=':fox_face: なんか失敗したこん… :pensive:',
+                    text=failed_text,
+                    blocks=create_blocks_from_text(failed_text),  # type: ignore
                     username=username,
                 )
 
@@ -94,7 +124,7 @@ def response_to_command(ack, respond, command):
         channel=channel,
         icon_emoji=':hideo54:',
         text=':fox_face:',
-        username=username,
+        username='Kaguya in hideout',
     )
 
 if __name__ == '__main__':
