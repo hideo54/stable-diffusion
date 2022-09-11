@@ -25,9 +25,9 @@ def load_model_from_config(ckpt, verbose=False):
     sd = pl_sd["state_dict"]
     return sd
 
-def generate_image(prompt):
+def generate_image(prompt, for_waifu=False):
     config = "optimizedSD/v1-inference.yaml"
-    ckpt = "models/ldm/stable-diffusion-v1/model.ckpt"
+    ckpt = 'models/ldm/waifu-diffusion-v1/model.ckpt' if for_waifu else "models/ldm/stable-diffusion-v1/model.ckpt"
 
     outpath = 'outputs/txt2img-samples'
     batch_size = 1

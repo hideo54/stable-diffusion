@@ -1,7 +1,5 @@
-import io, os, time
-import cv2
+import io, os, uuid
 from slack_bolt import App
-from PIL import Image
 from google.cloud import storage
 
 import simple_txt2img
@@ -46,8 +44,9 @@ def response_to_command(ack, respond, command):
         ]
 
     channel = command['user_id'] if command['channel_name'] == 'directmessage' else command['channel_id']
-    if 'text' in command and command['text'].startswith('sd '):
-        username = 'Stable Diffusion'
+    if 'text' in command and (command['text'].startswith('sd ') or command['text'].startswith('wd ')):
+        for_waifu = command['text'].startswith('wd')
+        username = 'Waifu Diffusion' if for_waifu else 'Stable Diffusion'
         if generation_in_progress:
             text = ':fox_face: 同時に相手にできるのは1人だけだこん :pensive: 2分ほど待つこん :tea:'
             app.client.chat_postMessage(
@@ -70,17 +69,17 @@ def response_to_command(ack, respond, command):
             try:
                 prompt = ' '.join(command['text'].split(' ')[1:])
                 generation_in_progress = True
-                result = simple_txt2img.generate_image(prompt) # takes a long time
+                result = simple_txt2img.generate_image(prompt, for_waifu=for_waifu) # takes a long time
                 if result is not None:
                     images, seed = result
                     image_urls = []
                     for image in images:
                         bio = io.BytesIO()
                         image.save(bio, format='png')
-                        unix_time = str(int(time.time()))
-                        filename = f'stable-diffusion/{unix_time}.png'
+                        id = uuid.uuid4()
+                        filename = f'stable-diffusion/{id}.png'
                         bucket.blob(filename).upload_from_string(data=bio.getvalue(), content_type='image/png')
-                        image_urls.append(f'https://img.hideo54.com/stable-diffusion/{unix_time}.png')
+                        image_urls.append(f'https://img.hideo54.com/stable-diffusion/{id}.png')
                     print(prompt, image_urls)
                     description_text = f':fox_face: 「{prompt}」の画像ができあがったこん :muscle: (seed: {seed})'
                     result_text = description_text + '\n' + '\n'.join(image_urls)
