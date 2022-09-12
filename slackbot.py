@@ -22,6 +22,8 @@ def response_to_command(ack, respond, command):
     channel_sandbox = os.environ.get('CHANNEL_SANDBOX')
     user_hideo54 = os.environ.get('USER_HIDEO54')
 
+    icon_emoji = ':hideo54_bot:'
+
     def create_blocks_from_text(text: str):
         return [
             {
@@ -51,7 +53,7 @@ def response_to_command(ack, respond, command):
             text = ':fox_face: 同時に相手にできるのは1人だけだこん :pensive: 2分ほど待つこん :tea:'
             app.client.chat_postMessage(
                 channel=channel,
-                icon_emoji=':hideo54:',
+                icon_emoji=icon_emoji,
                 text=text,
                 blocks=create_blocks_from_text(text),  # type: ignore
                 username=username,
@@ -61,7 +63,7 @@ def response_to_command(ack, respond, command):
             text = ':fox_face: 承ったこん! 生成がんばるこん :muscle: 2分ほどかかるこん… :tea:'
             app.client.chat_postMessage(
                 channel=channel,
-                icon_emoji=':hideo54:',
+                icon_emoji=icon_emoji,
                 text=text,
                 blocks=create_blocks_from_text(text),  # type: ignore
                 username=username,
@@ -85,14 +87,14 @@ def response_to_command(ack, respond, command):
                     result_text = description_text + '\n' + '\n'.join(image_urls)
                     first_post_result = app.client.chat_postMessage(
                         channel=channel,
-                        icon_emoji=':hideo54:',
+                        icon_emoji=icon_emoji,
                         text=description_text,
                         blocks=create_blocks_from_text(description_text),  # type: ignore
                         username=username,
                     )
                     app.client.chat_postMessage(
                         channel=channel,
-                        icon_emoji=':hideo54:',
+                        icon_emoji=icon_emoji,
                         text=result_text,
                         blocks=create_blocks_from_text(result_text),  # type: ignore
                         thread_ts=first_post_result['ts'],
@@ -101,7 +103,7 @@ def response_to_command(ack, respond, command):
                     if command['channel_id'] != channel_sandbox:
                         app.client.chat_postMessage(
                             channel=user_hideo54, # type: ignore
-                            icon_emoji=':hideo54:',
+                            icon_emoji=icon_emoji,
                             text=result_text,
                             blocks=create_blocks_from_text(result_text),  # type: ignore
                             username=username,
@@ -110,7 +112,7 @@ def response_to_command(ack, respond, command):
                 failed_text = ':fox_face: なんか失敗したこん… :pensive:'
                 app.client.chat_postMessage(
                     channel=channel,
-                    icon_emoji=':hideo54:',
+                    icon_emoji=icon_emoji,
                     text=failed_text,
                     blocks=create_blocks_from_text(failed_text),  # type: ignore
                     username=username,
