@@ -80,9 +80,6 @@ def generate_image(prompt, batch_size=1, H=512, W=512, for_waifu=False):
 
     with torch.no_grad():
         for prompts in tqdm(data, desc="data"):
-            sample_path = os.path.join(outpath, '_'.join(re.split(':| ', prompts[0])))[:150]
-            os.makedirs(sample_path, exist_ok=True)
-
             with precision_scope('cuda'):
                 modelCS.to('cuda')
                 uc = modelCS.get_learned_conditioning(batch_size * [""])
