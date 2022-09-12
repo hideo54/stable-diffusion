@@ -25,16 +25,13 @@ def load_model_from_config(ckpt, verbose=False):
     sd = pl_sd["state_dict"]
     return sd
 
-def generate_image(prompt, for_waifu=False):
+def generate_image(prompt, batch_size=1, H=512, W=512, for_waifu=False):
     config = "optimizedSD/v1-inference.yaml"
     ckpt = 'models/ldm/waifu-diffusion-v1/model.ckpt' if for_waifu else "models/ldm/stable-diffusion-v1/model.ckpt"
 
     outpath = 'outputs/txt2img-samples'
-    batch_size = 1
     ddim_steps = 50
     C = 4
-    H = 512
-    W = 512
     f = 8
     scale = 7.5
 
