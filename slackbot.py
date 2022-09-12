@@ -89,9 +89,9 @@ def response_to_command(ack, respond, command):
                 if submode is not None:
                     if submode.strip() == 'landscape':
                         W = 640
-                        H = 360
+                        H = 384
                     elif submode.strip() == 'portrait':
-                        W = 360
+                        W = 384
                         H = 640
                     else:
                         w_rate, h_rate = list(map(int, submode.split(':')))
