@@ -1,4 +1,4 @@
-import io, os, uuid
+import io, os, re, uuid
 from slack_bolt import App
 from google.cloud import storage
 
@@ -46,8 +46,11 @@ def response_to_command(ack, respond, command):
         ]
 
     channel = command['user_id'] if command['channel_name'] == 'directmessage' else command['channel_id']
-    if 'text' in command and (command['text'].startswith('sd ') or command['text'].startswith('wd ')):
-        for_waifu = command['text'].startswith('wd')
+    command_match = re.match(r'(sd|wd) (portrait |landscape )?(\d* )?(.+)', command['text'])
+    if 'text' in command and command_match:
+        mode, submode, n_str, prompt = command_match.groups()
+        batch_size = int(n_str.strip()) if n_str else 1
+        for_waifu = mode == 'wd'
         username = 'Waifu Diffusion' if for_waifu else 'Stable Diffusion'
         if generation_in_progress:
             text = ':fox_face: 同時に相手にできるのは1人だけだこん :pensive: 2分ほど待つこん :tea:'
@@ -69,9 +72,8 @@ def response_to_command(ack, respond, command):
                 username=username,
             )
             try:
-                prompt = ' '.join(command['text'].split(' ')[1:])
                 generation_in_progress = True
-                result = simple_txt2img.generate_image(prompt, for_waifu=for_waifu) # takes a long time
+                result = simple_txt2img.generate_image(prompt, batch_size=batch_size, for_waifu=for_waifu) # takes a long time
                 if result is not None:
                     images, seed = result
                     image_urls = []
@@ -82,8 +84,9 @@ def response_to_command(ack, respond, command):
                         filename = f'stable-diffusion/{id}.png'
                         bucket.blob(filename).upload_from_string(data=bio.getvalue(), content_type='image/png')
                         image_urls.append(f'https://img.hideo54.com/stable-diffusion/{id}.png')
-                    print(prompt, image_urls)
-                    description_text = f':fox_face: 「{prompt}」の画像ができあがったこん :muscle: (seed: {seed})'
+                    print(channel, command['text'], image_urls)
+                    seed_text = str(seed) if batch_size == 1 else f'{seed} - {seed + batch_size - 1}'
+                    description_text = f':fox_face: 「{prompt}」の画像ができあがったこん :muscle: (seed: {seed_text})'
                     result_text = description_text + '\n' + '\n'.join(image_urls)
                     first_post_result = app.client.chat_postMessage(
                         channel=channel,
@@ -123,7 +126,7 @@ def response_to_command(ack, respond, command):
 
     app.client.chat_postMessage(
         channel=channel,
-        icon_emoji=':hideo54:',
+        icon_emoji=icon_emoji,
         text=':fox_face:',
         username='Kaguya in hideout',
     )
