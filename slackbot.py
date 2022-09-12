@@ -1,4 +1,4 @@
-import io, math, os, re, uuid
+import io, math, os, re, traceback, uuid
 from slack_bolt import App
 from google.cloud import storage
 
@@ -46,7 +46,7 @@ def response_to_command(ack, respond, command):
         ]
 
     channel = command['user_id'] if command['channel_name'] == 'directmessage' else command['channel_id']
-    command_match = re.match(r'(sd|wd) (portrait |landscape )?(\d* )?(.+)', command['text'])
+    command_match = re.match(r'(sd|wd) (portrait |landscape |\d+:\d+ )?(\d* )?(.+)', command['text'])
     if 'text' in command and command_match:
         mode, submode, n_str, prompt = command_match.groups()
         batch_size = int(n_str.strip()) if n_str else 1
@@ -93,6 +93,17 @@ def response_to_command(ack, respond, command):
                     elif submode.strip() == 'portrait':
                         W = 360
                         H = 640
+                    else:
+                        w_rate, h_rate = list(map(int, submode.split(':')))
+                        if W * H < 64 * 64 * w_rate * h_rate:
+                            scaling = math.sqrt(W * H / (w_rate * h_rate))
+                            W = int(w_rate * scaling / 64) * 64
+                            H = int(h_rate * scaling / 64) * 64
+                        else:
+                            scaling = math.floor(math.sqrt(W * H / (w_rate * h_rate)) / 64) * 64
+                            W = int(w_rate * scaling)
+                            H = int(h_rate * scaling)
+                print(W, H)
                 result = simple_txt2img.generate_image(prompt,
                     batch_size=batch_size,
                     W=W,
@@ -137,6 +148,7 @@ def response_to_command(ack, respond, command):
                             username=username,
                         )
             except:
+                traceback.print_exc()
                 failed_text = ':fox_face: なんか失敗したこん… :pensive:'
                 app.client.chat_postMessage(
                     channel=channel,
