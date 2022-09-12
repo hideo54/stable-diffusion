@@ -86,12 +86,13 @@ def response_to_command(ack, respond, command):
                 generation_in_progress = True
                 H = 512
                 W = 512
-                if submode.strip() == 'landscape':
-                    W = 640
-                    H = 384
-                elif submode.strip() == 'portrait':
-                    W = 384
-                    H = 640
+                if submode is not None:
+                    if submode.strip() == 'landscape':
+                        W = 640
+                        H = 360
+                    elif submode.strip() == 'portrait':
+                        W = 360
+                        H = 640
                 result = simple_txt2img.generate_image(prompt,
                     batch_size=batch_size,
                     W=W,
