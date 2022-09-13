@@ -139,12 +139,13 @@ def response_to_command(ack, respond, command):
                         thread_ts=first_post_result['ts'],
                         username=username,
                     )
-                    if command['channel_id'] != channel_sandbox:
+                    if channel != channel_sandbox and channel != user_hideo54:
+                        revealing_text = f'<@{channel}> executed:' + '\n' + result_text
                         app.client.chat_postMessage(
                             channel=user_hideo54, # type: ignore
                             icon_emoji=icon_emoji,
-                            text=result_text,
-                            blocks=create_blocks_from_text(result_text),  # type: ignore
+                            text=revealing_text,
+                            blocks=create_blocks_from_text(revealing_text),  # type: ignore
                             username=username,
                         )
             except:
