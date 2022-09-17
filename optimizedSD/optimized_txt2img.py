@@ -15,7 +15,7 @@ from contextlib import contextmanager, nullcontext
 from ldm.util import instantiate_from_config
 from optimUtils import split_weighted_subprompts, logger
 from transformers import logging
-import pandas as pd
+# from samplers import CompVisDenoiser
 logging.set_verbosity_error()
 
 
@@ -160,6 +160,13 @@ parser.add_argument(
     choices=["jpg", "png"],
     default="png",
 )
+parser.add_argument(
+    "--sampler",
+    type=str,
+    help="sampler",
+    choices=["ddim", "plms","heun", "euler", "euler_a", "dpm2", "dpm2_a", "lms"],
+    default="plms",
+)
 opt = parser.parse_args()
 
 tic = time.time()
@@ -223,8 +230,8 @@ if opt.fixed_code:
 batch_size = opt.n_samples
 n_rows = opt.n_rows if opt.n_rows > 0 else batch_size
 if not opt.from_file:
+    assert opt.prompt is not None
     prompt = opt.prompt
-    assert prompt is not None
     data = [batch_size * [prompt]]
 
 else:
@@ -272,7 +279,7 @@ with torch.no_grad():
                 else:
                     c = modelCS.get_learned_conditioning(prompts)
 
-                shape = [opt.C, opt.H // opt.f, opt.W // opt.f]
+                shape = [opt.n_samples, opt.C, opt.H // opt.f, opt.W // opt.f]
 
                 if opt.device != "cpu":
                     mem = torch.cuda.memory_allocated() / 1e6
@@ -283,7 +290,6 @@ with torch.no_grad():
                 samples_ddim = model.sample(
                     S=opt.ddim_steps,
                     conditioning=c,
-                    batch_size=opt.n_samples,
                     seed=opt.seed,
                     shape=shape,
                     verbose=False,
@@ -291,6 +297,7 @@ with torch.no_grad():
                     unconditional_conditioning=uc,
                     eta=opt.ddim_eta,
                     x_T=start_code,
+                    sampler = opt.sampler,
                 )
 
                 modelFS.to(opt.device)
