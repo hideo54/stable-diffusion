@@ -99,7 +99,7 @@ def generate_image(prompt, batch_size=1, H=512, W=512, for_waifu=False):
                 else:
                     c = modelCS.get_learned_conditioning(prompts)
 
-                shape = [C, H // f, W // f]
+                shape = [batch_size, C, H // f, W // f]
 
                 mem = torch.cuda.memory_allocated() / 1e6
                 modelCS.to('cpu')
@@ -109,7 +109,6 @@ def generate_image(prompt, batch_size=1, H=512, W=512, for_waifu=False):
                 samples_ddim = model.sample(
                     S=ddim_steps,
                     conditioning=c,
-                    batch_size=batch_size,
                     seed=seed,
                     shape=shape,
                     verbose=False,
