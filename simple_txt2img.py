@@ -29,7 +29,6 @@ def generate_image(prompt, batch_size=1, H=512, W=512, for_waifu=False):
     config = "optimizedSD/v1-inference.yaml"
     ckpt = 'models/ldm/waifu-diffusion-v1/model.ckpt' if for_waifu else "models/ldm/stable-diffusion-v1/model.ckpt"
 
-    outpath = 'outputs/txt2img-samples'
     ddim_steps = 50
     C = 4
     f = 8
