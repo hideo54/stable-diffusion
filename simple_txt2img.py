@@ -25,9 +25,13 @@ def load_model_from_config(ckpt, verbose=False):
     sd = pl_sd["state_dict"]
     return sd
 
-def generate_image(prompt, batch_size=1, H=512, W=512, for_waifu=False):
+def generate_image(prompt, batch_size=1, H=512, W=512, model='stable-diffusion'):
     config = "optimizedSD/v1-inference.yaml"
-    ckpt = 'models/ldm/waifu-diffusion-v1/model.ckpt' if for_waifu else "models/ldm/stable-diffusion-v1/model.ckpt"
+    ckpt = 'models/ldm/stable-diffusion-v1/model.ckpt'
+    if model == 'waifu-diffusion':
+        ckpt = 'models/ldm/waifu-diffusion-v1/model.ckpt'
+    if model == 'trinart':
+        ckpt = 'models/ldm/trinart_stable_diffusion_v2/trinart2_step115000.ckpt'
 
     ddim_steps = 50
     C = 4
@@ -37,7 +41,7 @@ def generate_image(prompt, batch_size=1, H=512, W=512, for_waifu=False):
     seed = randint(0, 1000000)
     seed_everything(seed)
 
-    sd = load_model_from_config(f"{ckpt}")
+    sd = load_model_from_config(ckpt)
     li, lo = [], []
     for key, value in sd.items():
         sp = key.split(".")

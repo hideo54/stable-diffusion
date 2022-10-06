@@ -47,12 +47,16 @@ def response_to_command(ack, respond, command):
 
     channel = command['user_id'] if command['channel_name'] == 'directmessage' else command['channel_id']
     if 'text' in command:
-        command_match = re.match(r'(sd|wd) (portrait |landscape |\d+:\d+ )?(\d* )?(.+)', command['text'])
+        command_match = re.match(r'(sd|wd|tr) (portrait |landscape |\d+:\d+ )?(\d* )?(.+)', command['text'])
         if command_match:
-            mode, submode, n_str, prompt = command_match.groups()
+            model_abbv, submode, n_str, prompt = command_match.groups()
             batch_size = int(n_str.strip()) if n_str else 1
-            for_waifu = mode == 'wd'
-            username = 'Waifu Diffusion' if for_waifu else 'Stable Diffusion'
+            model = 'stable-diffusion'
+            if model_abbv == 'wd':
+                model = 'waifu-diffusion'
+            if model_abbv == 'tr':
+                model = 'trinart'
+            username = model.replace('-', ' ').title()
             estimated_minutes = math.ceil(1.5 + 0.5 * batch_size)
             if generation_in_progress:
                 text = f':fox_face: 同時に相手にできるのは1人だけだこん :pensive: {estimated_minutes}分ほど待つこん :tea:'
@@ -109,7 +113,7 @@ def response_to_command(ack, respond, command):
                         batch_size=batch_size,
                         W=W,
                         H=H,
-                        for_waifu=for_waifu
+                        model=model,
                     ) # takes a long time
                     if result is not None:
                         images, seed = result
