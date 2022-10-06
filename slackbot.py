@@ -47,13 +47,15 @@ def response_to_command(ack, respond, command):
 
     channel = command['user_id'] if command['channel_name'] == 'directmessage' else command['channel_id']
     if 'text' in command:
-        command_match = re.match(r'(sd|wd|tr) (portrait |landscape |\d+:\d+ )?(\d* )?(.+)', command['text'])
+        command_match = re.match(r'(sd|wd|hd|tr) (portrait |landscape |\d+:\d+ )?(\d* )?(.+)', command['text'])
         if command_match:
             model_abbv, submode, n_str, prompt = command_match.groups()
             batch_size = int(n_str.strip()) if n_str else 1
             model = 'stable-diffusion'
             if model_abbv == 'wd':
                 model = 'waifu-diffusion'
+            if model_abbv == 'hd':
+                model = 'hentai-diffusion'
             if model_abbv == 'tr':
                 model = 'trinart'
             username = model.replace('-', ' ').title()

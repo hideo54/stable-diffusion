@@ -30,6 +30,8 @@ def generate_image(prompt, batch_size=1, H=512, W=512, model='stable-diffusion')
     ckpt = 'models/ldm/stable-diffusion-v1/model.ckpt'
     if model == 'waifu-diffusion':
         ckpt = 'models/ldm/waifu-diffusion-v1/model.ckpt'
+    if model == 'hentai-diffusion':
+        ckpt = 'models/ldm/hentai-diffusion/RD1412.ckpt'
     if model == 'trinart':
         ckpt = 'models/ldm/trinart_stable_diffusion_v2/trinart2_step115000.ckpt'
 
