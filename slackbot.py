@@ -1,5 +1,6 @@
 import io, math, os, re, traceback, uuid
 from slack_bolt import App
+from slack_bolt.adapter.socket_mode import SocketModeHandler
 from google.cloud import storage
 
 import simple_txt2img
@@ -11,43 +12,45 @@ app = App(
 client = storage.Client()
 bucket = client.get_bucket('img.hideo54.com')
 
+channel_sandbox = os.environ.get('CHANNEL_SANDBOX')
+user_hideo54 = os.environ.get('USER_HIDEO54')
+user_hideo54_bot = os.environ.get('USER_HIDEO54_BOT')
+
+icon_emoji = ':hideo54_bot:'
+
 generation_in_progress = False
 
-@app.command('/hideo')
-def response_to_command(ack, respond, command):
-    ack(response_type='in_channel')
-    global generation_in_progress
-    global bucket
-
-    channel_sandbox = os.environ.get('CHANNEL_SANDBOX')
-    user_hideo54 = os.environ.get('USER_HIDEO54')
-
-    icon_emoji = ':hideo54_bot:'
-
-    def create_blocks_from_text(text: str):
-        return [
-            {
-                'type': 'context',
-                'elements': [
-                    {
-                        'type': 'plain_text',
-                        'text': 'Managed by Kaguya in hideout',
-                        'emoji': True,
-                    },
-                ],
-            },
-            {
-                'type': 'section',
-                'text': {
-                    'type': 'mrkdwn',
-                    'text': text,
+def create_blocks_from_text(text: str):
+    return [
+        {
+            'type': 'context',
+            'elements': [
+                {
+                    'type': 'plain_text',
+                    'text': 'Managed by Kaguya in hideout',
+                    'emoji': True,
                 },
+            ],
+        },
+        {
+            'type': 'section',
+            'text': {
+                'type': 'mrkdwn',
+                'text': text,
             },
-        ]
+        },
+    ]
 
-    channel = command['user_id'] if command['channel_name'] == 'directmessage' else command['channel_id']
-    if 'text' in command:
-        command_match = re.match(r'(sd|wd|hd|tr) (portrait |landscape |\d+:\d+ )?(\d* )?(.+)', command['text'])
+@app.event('message')
+def response_to_command_message(message):
+    if 'text' not in message:
+        return
+    if message['text'].startswith(f'<@{user_hideo54_bot}>') or message['channel_type'] == 'im':
+        global generation_in_progress
+        global bucket
+
+        channel = message['channel'] if 'channel' in message else message['user']
+        command_match = re.search(r'(sd|wd|hd|tr) (portrait |landscape |\d+:\d+ )?(\d* )?(.+)$', message['text'])
         if command_match:
             model_abbv, submode, n_str, prompt = command_match.groups()
             batch_size = int(n_str.strip()) if n_str else 1
@@ -110,7 +113,6 @@ def response_to_command(ack, respond, command):
                                 scaling = math.floor(math.sqrt(W * H / (w_rate * h_rate)) / 64) * 64
                                 W = int(w_rate * scaling)
                                 H = int(h_rate * scaling)
-                    print(W, H)
                     result = simple_txt2img.generate_image(prompt,
                         batch_size=batch_size,
                         W=W,
@@ -127,7 +129,7 @@ def response_to_command(ack, respond, command):
                             filename = f'stable-diffusion/{id}.png'
                             bucket.blob(filename).upload_from_string(data=bio.getvalue(), content_type='image/png')
                             image_urls.append(f'https://img.hideo54.com/stable-diffusion/{id}.png')
-                        print(channel, command['text'], image_urls)
+                        print(channel, message['text'], image_urls)
                         seed_text = str(seed) if batch_size == 1 else f'{seed} - {seed + batch_size - 1}'
                         description_text = f':fox_face: 「{prompt}」の画像ができあがったこん :muscle: (seed: {seed_text})'
                         result_text = description_text + '\n' + '\n'.join(image_urls)
@@ -169,14 +171,13 @@ def response_to_command(ack, respond, command):
                 generation_in_progress = False
                 return
 
-    app.client.chat_postMessage(
-        channel=channel,
-        icon_emoji=icon_emoji,
-        text=':fox_face:',
-        username='Kaguya in hideout',
-    )
+        app.client.chat_postMessage(
+            channel=channel,
+            icon_emoji=icon_emoji,
+            text=':fox_face:',
+            username='Kaguya in hideout',
+        )
 
 if __name__ == '__main__':
-    app.start(
-        port=int(os.environ.get('PORT', 54011)),
-    )
+    handler = SocketModeHandler(app, os.environ['SLACK_APP_TOKEN'])
+    handler.start()
